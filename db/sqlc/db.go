@@ -10,6 +10,8 @@ import (
 	"fmt"
 )
 
+// Defines 4 common methods that both sql.DB and sql.Tx object has
+// Allows use to use either db or a transaction to execute queries
 type DBTX interface {
 	ExecContext(context.Context, string, ...interface{}) (sql.Result, error)
 	PrepareContext(context.Context, string) (*sql.Stmt, error)
@@ -17,6 +19,9 @@ type DBTX interface {
 	QueryRowContext(context.Context, string, ...interface{}) *sql.Row
 }
 
+// Takes a dbTX as input and returns Queries object
+// so we can pass in sql.DB or sql.TX object
+// run single query or multiple queries in a transaction
 func New(db DBTX) *Queries {
 	return &Queries{db: db}
 }
@@ -54,8 +59,8 @@ func Prepare(ctx context.Context, db DBTX) (*Queries, error) {
 	if q.listTransfersStmt, err = db.PrepareContext(ctx, listTransfers); err != nil {
 		return nil, fmt.Errorf("error preparing query ListTransfers: %w", err)
 	}
-	if q.updateAuthorBiosStmt, err = db.PrepareContext(ctx, updateAuthorBios); err != nil {
-		return nil, fmt.Errorf("error preparing query UpdateAuthorBios: %w", err)
+	if q.updateAccountStmt, err = db.PrepareContext(ctx, updateAccount); err != nil {
+		return nil, fmt.Errorf("error preparing query UpdateAccount: %w", err)
 	}
 	return &q, nil
 }
@@ -112,9 +117,9 @@ func (q *Queries) Close() error {
 			err = fmt.Errorf("error closing listTransfersStmt: %w", cerr)
 		}
 	}
-	if q.updateAuthorBiosStmt != nil {
-		if cerr := q.updateAuthorBiosStmt.Close(); cerr != nil {
-			err = fmt.Errorf("error closing updateAuthorBiosStmt: %w", cerr)
+	if q.updateAccountStmt != nil {
+		if cerr := q.updateAccountStmt.Close(); cerr != nil {
+			err = fmt.Errorf("error closing updateAccountStmt: %w", cerr)
 		}
 	}
 	return err
@@ -153,36 +158,39 @@ func (q *Queries) queryRow(ctx context.Context, stmt *sql.Stmt, query string, ar
 	}
 }
 
+// DBTX = which can be either a *sql.DB or *sql.Tx. aka DB connection or a transaction
 type Queries struct {
-	db                   DBTX
-	tx                   *sql.Tx
-	createAccountStmt    *sql.Stmt
-	createEntryStmt      *sql.Stmt
-	createTransferStmt   *sql.Stmt
-	deleteAccountStmt    *sql.Stmt
-	getAccountStmt       *sql.Stmt
-	getEntryStmt         *sql.Stmt
-	getTransferStmt      *sql.Stmt
-	listAccountsStmt     *sql.Stmt
-	listEntriesStmt      *sql.Stmt
-	listTransfersStmt    *sql.Stmt
-	updateAuthorBiosStmt *sql.Stmt
+	db                 DBTX
+	tx                 *sql.Tx
+	createAccountStmt  *sql.Stmt
+	createEntryStmt    *sql.Stmt
+	createTransferStmt *sql.Stmt
+	deleteAccountStmt  *sql.Stmt
+	getAccountStmt     *sql.Stmt
+	getEntryStmt       *sql.Stmt
+	getTransferStmt    *sql.Stmt
+	listAccountsStmt   *sql.Stmt
+	listEntriesStmt    *sql.Stmt
+	listTransfersStmt  *sql.Stmt
+	updateAccountStmt  *sql.Stmt
 }
 
+// Method: 	withTX which allows a Queries instance to be associated with a transaction.
+// 
 func (q *Queries) WithTx(tx *sql.Tx) *Queries {
 	return &Queries{
-		db:                   tx,
-		tx:                   tx,
-		createAccountStmt:    q.createAccountStmt,
-		createEntryStmt:      q.createEntryStmt,
-		createTransferStmt:   q.createTransferStmt,
-		deleteAccountStmt:    q.deleteAccountStmt,
-		getAccountStmt:       q.getAccountStmt,
-		getEntryStmt:         q.getEntryStmt,
-		getTransferStmt:      q.getTransferStmt,
-		listAccountsStmt:     q.listAccountsStmt,
-		listEntriesStmt:      q.listEntriesStmt,
-		listTransfersStmt:    q.listTransfersStmt,
-		updateAuthorBiosStmt: q.updateAuthorBiosStmt,
+		db:                 tx,
+		tx:                 tx,
+		createAccountStmt:  q.createAccountStmt,
+		createEntryStmt:    q.createEntryStmt,
+		createTransferStmt: q.createTransferStmt,
+		deleteAccountStmt:  q.deleteAccountStmt,
+		getAccountStmt:     q.getAccountStmt,
+		getEntryStmt:       q.getEntryStmt,
+		getTransferStmt:    q.getTransferStmt,
+		listAccountsStmt:   q.listAccountsStmt,
+		listEntriesStmt:    q.listEntriesStmt,
+		listTransfersStmt:  q.listTransfersStmt,
+		updateAccountStmt:  q.updateAccountStmt,
 	}
 }

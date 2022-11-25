@@ -6,7 +6,7 @@ import (
 	"os"
 	"testing"
 
-	_"github.com/lib/pq"
+	_"github.com/lib/pq" // import the postgres driver _ blank identifier
 )
 
 const (
@@ -17,15 +17,23 @@ const (
 // Global variable, use it in other test files
 // DB Connection to create Queries Object
 var testQueries *Queries
-
+var testDB *sql.DB
 // Main entry point of all unit tests inside this package db
 func TestMain(m *testing.M) {
-	conn, err := sql.Open(dbDriver, dbSource)
+	var err error
+	testDB, err = sql.Open(dbDriver, dbSource)
+	// sql.Open() returns a connection object and an error
+
+	// if error is not null is same thing as if (error)
 	if err != nil {
 		log.Fatal("Cannot connect to db: ", err)
 	}
 
-	testQueries = New(conn)
+	// Create Queries Object
+	// use the connection to create a Queries Object
+	testQueries = New(testDB)
 
+	// m.Run to start running the unit test, it will return an exit code
+	// Report the exit code to the OS
 	os.Exit(m.Run())
 }

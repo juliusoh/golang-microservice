@@ -23,7 +23,13 @@ type CreateAccountParams struct {
 	Currency string `json:"currency"`
 }
 
+// CreateAccount function is defined as a method of the Queries object
+// Takes context and CreateAccountParams as arguments
+// Returns Account model object and error
 func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (Account, error) {
+	// queryRow is a method of the Queries object
+	// to execute the create account sql query
+	// we pass in context, query, and 3 arguemnts
 	row := q.queryRow(ctx, q.createAccountStmt, createAccount, arg.Owner, arg.Balance, arg.Currency)
 	var i Account
 	err := row.Scan(
@@ -33,6 +39,8 @@ func (q *Queries) CreateAccount(ctx context.Context, arg CreateAccountParams) (A
 		&i.Currency,
 		&i.CreatedAt,
 	)
+	// Function returns a row object we can use to scan the value of each column into correct variables
+	
 	return i, err
 }
 
@@ -105,20 +113,20 @@ func (q *Queries) ListAccounts(ctx context.Context, arg ListAccountsParams) ([]A
 	return items, nil
 }
 
-const updateAuthorBios = `-- name: UpdateAuthorBios :one
+const updateAccount = `-- name: UpdateAccount :one
 UPDATE accounts 
 SET balance = $1 
 WHERE id = $2 
 RETURNING id, owner, balance, currency, created_at
 `
 
-type UpdateAuthorBiosParams struct {
+type UpdateAccountParams struct {
 	Balance int64 `json:"balance"`
 	ID      int64 `json:"id"`
 }
 
-func (q *Queries) UpdateAuthorBios(ctx context.Context, arg UpdateAuthorBiosParams) (Account, error) {
-	row := q.queryRow(ctx, q.updateAuthorBiosStmt, updateAuthorBios, arg.Balance, arg.ID)
+func (q *Queries) UpdateAccount(ctx context.Context, arg UpdateAccountParams) (Account, error) {
+	row := q.queryRow(ctx, q.updateAccountStmt, updateAccount, arg.Balance, arg.ID)
 	var i Account
 	err := row.Scan(
 		&i.ID,
